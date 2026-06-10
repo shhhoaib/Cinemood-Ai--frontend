@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { getTrending, getTrendingTv, getPopular, getNowPlaying, getUpcoming, getProvidersTrending, getDnaPicks } from '../api/backend'
+import { getTrending, getTrendingTv, getPopular, getNowPlaying, getUpcoming, getProvidersTrending, getDnaPicks, getIndustryMovies } from '../api/backend'
 import { useAuthStore } from '../store/useAuthStore'
 import HeroBanner from '../components/Hero/HeroBanner'
 import HorizontalScroll from '../components/Hero/HorizontalScroll'
@@ -8,6 +8,16 @@ import MovieGrid from '../components/MovieGrid/MovieGrid'
 import IndustrySidebar from '../components/Industry/IndustrySidebar'
 import UserDnaBadge from '../components/UserDnaBadge/UserDnaBadge'
 import { useMoodStore } from '../store/useMoodStore'
+
+const HOME_INDUSTRIES = [
+  { id: 'anime', name: 'Anime', flag: '\u{1F1EF}\u{1F1F5}', bg: 'from-purple-600/20' },
+  { id: 'korean', name: 'Korean', flag: '\u{1F1F0}\u{1F1F7}', bg: 'from-red-600/20' },
+  { id: 'indian', name: 'Indian', flag: '\u{1F1EE}\u{1F1F3}', bg: 'from-orange-600/20' },
+  { id: 'pakistani', name: 'Pakistani', flag: '\u{1F1F5}\u{1F1F0}', bg: 'from-green-600/20' },
+  { id: 'japanese', name: 'Japanese', flag: '\u{1F1EF}\u{1F1F5}', bg: 'from-pink-600/20' },
+  { id: 'spanish', name: 'Spanish', flag: '\u{1F1EA}\u{1F1F8}', bg: 'from-yellow-600/20' },
+  { id: 'french', name: 'French', flag: '\u{1F1EB}\u{1F1F7}', bg: 'from-blue-600/20' },
+]
 
 const PROVIDER_LABELS = {
   netflix: { name: 'Netflix', color: 'from-red-700/30' },
@@ -65,6 +75,16 @@ export default function Home() {
     enabled: !!user?.id,
     select: (r) => r.data.recommendations,
   })
+
+  const { data: animeMovies } = useQuery({ queryKey: ['industry-home', 'anime'], queryFn: () => getIndustryMovies('anime', 1, 'trending'), select: (r) => r.data.movies, staleTime: 1000 * 60 * 10 })
+  const { data: koreanMovies } = useQuery({ queryKey: ['industry-home', 'korean'], queryFn: () => getIndustryMovies('korean', 1, 'trending'), select: (r) => r.data.movies, staleTime: 1000 * 60 * 10 })
+  const { data: indianMovies } = useQuery({ queryKey: ['industry-home', 'indian'], queryFn: () => getIndustryMovies('indian', 1, 'trending'), select: (r) => r.data.movies, staleTime: 1000 * 60 * 10 })
+  const { data: pakistaniMovies } = useQuery({ queryKey: ['industry-home', 'pakistani'], queryFn: () => getIndustryMovies('pakistani', 1, 'trending'), select: (r) => r.data.movies, staleTime: 1000 * 60 * 10 })
+  const { data: japaneseMovies } = useQuery({ queryKey: ['industry-home', 'japanese'], queryFn: () => getIndustryMovies('japanese', 1, 'trending'), select: (r) => r.data.movies, staleTime: 1000 * 60 * 10 })
+  const { data: spanishMovies } = useQuery({ queryKey: ['industry-home', 'spanish'], queryFn: () => getIndustryMovies('spanish', 1, 'trending'), select: (r) => r.data.movies, staleTime: 1000 * 60 * 10 })
+  const { data: frenchMovies } = useQuery({ queryKey: ['industry-home', 'french'], queryFn: () => getIndustryMovies('french', 1, 'trending'), select: (r) => r.data.movies, staleTime: 1000 * 60 * 10 })
+
+  const HOME_INDUSTRY_DATA = { anime: animeMovies, korean: koreanMovies, indian: indianMovies, pakistani: pakistaniMovies, japanese: japaneseMovies, spanish: spanishMovies, french: frenchMovies }
 
   return (
     <div className="relative z-10">
@@ -141,6 +161,26 @@ export default function Home() {
                     <p className="text-gray-500 text-xs">Trending on {provider.name}</p>
                   </div>
                   <HorizontalScroll title="" items={items} isLoading={false} link="/movies" />
+                </div>
+              )
+            })}
+
+            {/* Industry Sections: Anime, Korean, Indian, Pakistani, Japanese, Spanish, French */}
+            {HOME_INDUSTRIES.map((ind) => {
+              const items = HOME_INDUSTRY_DATA[ind.id]
+              if (!items || items.length === 0) return null
+              return (
+                <div key={ind.id} className="mb-8">
+                  <div className={`bg-gradient-to-r ${ind.bg} to-transparent rounded-xl p-4 mb-3 border border-white/5`}>
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">{ind.flag}</span>
+                      <div>
+                        <h3 className="text-white font-cinema text-lg font-bold">{ind.name}</h3>
+                        <p className="text-gray-500 text-xs">Trending {ind.name} content</p>
+                      </div>
+                    </div>
+                  </div>
+                  <HorizontalScroll title="" items={items} link={`/industry/${ind.id}`} />
                 </div>
               )
             })}

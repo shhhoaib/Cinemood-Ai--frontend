@@ -6,11 +6,15 @@ const INDUSTRIES = [
   { id: 'hollywood', name: 'Hollywood', flag: '\u{1F1FA}\u{1F1F8}' },
   { id: 'korean', name: 'Korean', flag: '\u{1F1F0}\u{1F1F7}' },
   { id: 'anime', name: 'Anime', flag: '\u{1F1EF}\u{1F1F5}' },
+  { id: 'japanese', name: 'Japanese', flag: '\u{1F1EF}\u{1F1F5}' },
+  { id: 'indian', name: 'Indian', flag: '\u{1F1EE}\u{1F1F3}' },
   { id: 'tamil', name: 'Tamil', flag: '\u{1F1EE}\u{1F1F3}' },
   { id: 'telugu', name: 'Telugu', flag: '\u{1F1EE}\u{1F1F3}' },
   { id: 'punjabi', name: 'Punjabi', flag: '\u{1F1EE}\u{1F1F3}' },
   { id: 'pakistani', name: 'Pakistani', flag: '\u{1F1F5}\u{1F1F0}' },
   { id: 'bengali', name: 'Bengali', flag: '\u{1F1E7}\u{1F1E9}' },
+  { id: 'spanish', name: 'Spanish', flag: '\u{1F1EA}\u{1F1F8}' },
+  { id: 'french', name: 'French', flag: '\u{1F1EB}\u{1F1F7}' },
   { id: 'turkish', name: 'Turkish', flag: '\u{1F1F9}\u{1F1F7}' },
 ]
 

@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { getMovieDetail, getTvDetail, getMovieMoodProfile } from '../api/backend'
 import HorizontalScroll from '../components/Hero/HorizontalScroll'
 import Loader from '../components/UI/Loader'
+import Reviews from '../components/Reviews/Reviews'
 
 export default function MovieDetail() {
   const { id } = useParams()
@@ -89,30 +90,45 @@ export default function MovieDetail() {
             </div>
 
             {/* Multi-source Ratings */}
-            <div className="flex flex-wrap items-center gap-4 mt-4">
-              {/* TMDB Rating */}
+            <div className="flex flex-wrap items-center gap-3 mt-4">
+              {/* TMDB */}
               {movie.tmdb_rating != null && (
-                <div className="flex items-center gap-1.5 bg-cinema-dark/60 rounded-lg px-3 py-1.5 border border-white/5">
-                  <span className="text-[10px] font-bold text-cinema-gold bg-cinema-gold/10 px-1.5 py-0.5 rounded">TMDB</span>
+                <div className="flex items-center gap-1.5 bg-cinema-dark/60 rounded-lg px-2.5 py-1.5 border border-white/5">
+                  <span className="text-[10px] font-bold text-cinema-gold">TMDB</span>
                   <span className="text-white font-semibold text-sm">{movie.tmdb_rating.toFixed(1)}</span>
-                  <span className="text-gray-500 text-xs">({movie.tmdb_votes?.toLocaleString()} votes)</span>
                 </div>
               )}
-              {/* IMDB Link */}
-              {movie.imdb_url && (
+              {/* IMDB Rating Badge */}
+              {movie.imdb_rating != null ? (
                 <a href={movie.imdb_url} target="_blank" rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 bg-yellow-500/10 rounded-lg px-3 py-1.5 border border-yellow-500/20 hover:bg-yellow-500/20 transition-colors">
+                  className="flex items-center gap-1.5 bg-yellow-500/10 rounded-lg px-2.5 py-1.5 border border-yellow-500/20 hover:bg-yellow-500/20 transition-colors group">
                   <span className="text-[10px] font-bold text-yellow-400">IMDb</span>
-                  <svg className="w-3 h-3 text-yellow-400" fill="currentColor" viewBox="0 0 24 24"><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
+                  <span className="text-white font-semibold text-sm">{movie.imdb_rating.toFixed(1)}</span>
+                  <svg className="w-3 h-3 text-yellow-400/50 group-hover:text-yellow-400 transition-colors" fill="currentColor" viewBox="0 0 24 24"><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
+                </a>
+              ) : movie.imdb_url ? (
+                <a href={movie.imdb_url} target="_blank" rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 bg-yellow-500/10 rounded-lg px-2.5 py-1.5 border border-yellow-500/20 hover:bg-yellow-500/20 transition-colors">
+                  <span className="text-[10px] font-bold text-yellow-400">IMDb</span>
+                  <span className="text-xs text-gray-400">View</span>
+                </a>
+              ) : null}
+              {/* Rotten Tomatoes Badge */}
+              {movie.rt_tomatometer != null && (
+                <a href={`https://www.rottentomatoes.com/m/${movie.title?.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`} target="_blank" rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 border transition-colors group"
+                  style={{ backgroundColor: movie.rt_tomatometer >= 60 ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)', borderColor: movie.rt_tomatometer >= 60 ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)' }}>
+                  <span className="text-[10px] font-bold" style={{ color: movie.rt_tomatometer >= 60 ? '#22c55e' : '#ef4444' }}>RT</span>
+                  <span className="text-white font-semibold text-sm">{movie.rt_tomatometer}%</span>
                 </a>
               )}
-              {/* Rotten Tomatoes Link */}
-              {movie.rotten_tomatoes_url && (
-                <a href={movie.rotten_tomatoes_url} target="_blank" rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 bg-red-500/10 rounded-lg px-3 py-1.5 border border-red-500/20 hover:bg-red-500/20 transition-colors">
-                  <span className="text-[10px] font-bold text-red-400">RT</span>
-                  <svg className="w-3 h-3 text-red-400" fill="currentColor" viewBox="0 0 24 24"><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
-                </a>
+              {/* Metacritic Badge */}
+              {movie.metacritic_score != null && (
+                <div className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 border"
+                  style={{ backgroundColor: movie.metacritic_score >= 60 ? 'rgba(34,197,94,0.1)' : movie.metacritic_score >= 40 ? 'rgba(234,179,8,0.1)' : 'rgba(239,68,68,0.1)', borderColor: movie.metacritic_score >= 60 ? 'rgba(34,197,94,0.2)' : movie.metacritic_score >= 40 ? 'rgba(234,179,8,0.2)' : 'rgba(239,68,68,0.2)' }}>
+                  <span className="text-[10px] font-bold" style={{ color: movie.metacritic_score >= 60 ? '#22c55e' : movie.metacritic_score >= 40 ? '#eab308' : '#ef4444' }}>Meta</span>
+                  <span className="text-white font-semibold text-sm">{movie.metacritic_score}</span>
+                </div>
               )}
               {/* Certification */}
               {movie.certification && (
@@ -135,6 +151,100 @@ export default function MovieDetail() {
               ))}
             </div>
             <p className="text-gray-300 mt-4 leading-relaxed">{movie.overview}</p>
+
+            {/* Movie Info Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-5">
+              {/* Budget */}
+              {movie.budget_formatted && (
+                <div className="bg-white/5 rounded-xl px-3 py-2.5 border border-white/5">
+                  <p className="text-[10px] text-gray-500 uppercase tracking-wider">Budget</p>
+                  <p className="text-white text-sm font-semibold mt-0.5">{movie.budget_formatted}</p>
+                </div>
+              )}
+              {/* Revenue */}
+              {movie.revenue_formatted && (
+                <div className="bg-white/5 rounded-xl px-3 py-2.5 border border-white/5">
+                  <p className="text-[10px] text-gray-500 uppercase tracking-wider">Box Office</p>
+                  <p className="text-white text-sm font-semibold mt-0.5">{movie.revenue_formatted}</p>
+                </div>
+              )}
+              {/* Director */}
+              {movie.director && (
+                <div className="bg-white/5 rounded-xl px-3 py-2.5 border border-white/5">
+                  <p className="text-[10px] text-gray-500 uppercase tracking-wider">Director</p>
+                  {movie.director.id ? (
+                    <Link to={`/person/${movie.director.id}`} className="text-cinema-red text-sm font-semibold mt-0.5 block hover:text-red-400 transition-colors">{movie.director.name}</Link>
+                  ) : (
+                    <p className="text-white text-sm font-semibold mt-0.5">{movie.director.name}</p>
+                  )}
+                </div>
+              )}
+              {/* Release Date */}
+              {movie.release_date && (
+                <div className="bg-white/5 rounded-xl px-3 py-2.5 border border-white/5">
+                  <p className="text-[10px] text-gray-500 uppercase tracking-wider">Release Date</p>
+                  <p className="text-white text-sm font-semibold mt-0.5">
+                    {new Date(movie.release_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                  </p>
+                </div>
+              )}
+              {/* Runtime (for movies) */}
+              {!isTv && movie.runtime > 0 && (
+                <div className="bg-white/5 rounded-xl px-3 py-2.5 border border-white/5">
+                  <p className="text-[10px] text-gray-500 uppercase tracking-wider">Runtime</p>
+                  <p className="text-white text-sm font-semibold mt-0.5">{Math.floor(movie.runtime / 60)}h {movie.runtime % 60}m</p>
+                </div>
+              )}
+              {/* Language */}
+              {movie.spoken_languages?.length > 0 && (
+                <div className="bg-white/5 rounded-xl px-3 py-2.5 border border-white/5">
+                  <p className="text-[10px] text-gray-500 uppercase tracking-wider">Language</p>
+                  <p className="text-white text-sm font-semibold mt-0.5 truncate">{movie.spoken_languages?.join(', ')}</p>
+                </div>
+              )}
+              {/* Original Title (if different) */}
+              {movie.original_title && movie.original_title !== movie.title && (
+                <div className="bg-white/5 rounded-xl px-3 py-2.5 border border-white/5 col-span-2 sm:col-span-1">
+                  <p className="text-[10px] text-gray-500 uppercase tracking-wider">Original Title</p>
+                  <p className="text-white text-sm font-semibold mt-0.5">{movie.original_title}</p>
+                </div>
+              )}
+              {/* TMDB Votes */}
+              {movie.tmdb_votes > 0 && (
+                <div className="bg-white/5 rounded-xl px-3 py-2.5 border border-white/5">
+                  <p className="text-[10px] text-gray-500 uppercase tracking-wider">TMDB Votes</p>
+                  <p className="text-white text-sm font-semibold mt-0.5">{movie.tmdb_votes?.toLocaleString()}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Production Companies */}
+            {movie.production_companies?.length > 0 && (
+              <div className="mt-4">
+                <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-2">Production</p>
+                <div className="flex flex-wrap gap-3">
+                  {movie.production_companies.map((c, i) => (
+                    <div key={i} className="flex items-center gap-2 bg-white/5 rounded-lg px-3 py-2 border border-white/5">
+                      {c.logo ? (
+                        <img src={c.logo} alt={c.name} className="h-4 object-contain brightness-0 invert" />
+                      ) : null}
+                      <span className="text-gray-300 text-xs">{c.name}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Homepage Link */}
+            {movie.homepage && (
+              <div className="mt-3">
+                <a href={movie.homepage} target="_blank" rel="noopener noreferrer"
+                  className="text-xs text-gray-500 hover:text-cinema-red transition-colors flex items-center gap-1">
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                  Official Website
+                </a>
+              </div>
+            )}
 
             <div className="flex flex-wrap gap-3 mt-6">
               {trailerUrl && (
@@ -268,8 +378,15 @@ export default function MovieDetail() {
 
         {/* Similar */}
         {movie.similar?.length > 0 && (
-          <section className="mt-8 mb-12">
+          <section className="mt-8">
             <HorizontalScroll title={isTv ? 'Similar Shows' : 'Similar Movies'} items={movie.similar} />
+          </section>
+        )}
+
+        {/* Reviews / Comments */}
+        {id && (
+          <section className="pb-16">
+            <Reviews contentType={isTv ? 'tv' : 'movie'} contentId={id} />
           </section>
         )}
       </div>

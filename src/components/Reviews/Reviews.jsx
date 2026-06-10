@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuthStore } from '../../store/useAuthStore'
@@ -36,8 +36,7 @@ function Avatar({ name, className = '' }) {
   )
 }
 
-function ReviewItem({ review, isReply, currentUser, onDelete, onLike, onReply }) {
-  const [showActions, setShowActions] = useState(false)
+function ReviewItem({ review, isReply, currentUser, onDelete, onLike, onReply, isPending }) {
   const [replyOpen, setReplyOpen] = useState(false)
   const [replyText, setReplyText] = useState('')
 
@@ -52,10 +51,12 @@ function ReviewItem({ review, isReply, currentUser, onDelete, onLike, onReply })
   }
 
   return (
-    <div className={`${isReply ? 'ml-10 pl-4 border-l-2 border-white/5' : ''}`}>
+    <div className={`${isReply ? 'ml-10 pl-4 border-l-2 border-white/5' : ''} ${isPending ? 'opacity-50' : ''}`}>
       <div className="flex gap-3 group">
         <div className="flex-shrink-0 mt-1">
-          {review.user_id === 'guest' ? (
+          {review._isOptimistic ? (
+            <div className="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center text-white text-xs font-bold animate-pulse">...</div>
+          ) : review.user_id === 'guest' ? (
             <div className="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center text-white text-xs font-bold">?</div>
           ) : (
             <Link to={currentUser?.id === review.user_id ? '/profile' : '#'}>
@@ -64,10 +65,10 @@ function ReviewItem({ review, isReply, currentUser, onDelete, onLike, onReply })
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="bg-white/5 rounded-2xl px-4 py-2.5">
+          <div className={`rounded-2xl px-4 py-2.5 ${review._isOptimistic ? 'bg-cinema-red/10 border border-cinema-red/20' : 'bg-white/5'}`}>
             <div className="flex items-center gap-2">
               <span className="text-white text-xs font-semibold">{review.user_name || 'User'}</span>
-              <span className="text-gray-600 text-[10px]">{timeAgo(review.created_at)}</span>
+              <span className="text-gray-600 text-[10px]">{review._isOptimistic ? 'sending...' : timeAgo(review.created_at)}</span>
               {review.updated_at > review.created_at && (
                 <span className="text-gray-600 text-[10px]">· edited</span>
               )}
@@ -138,7 +139,7 @@ function ReviewItem({ review, isReply, currentUser, onDelete, onLike, onReply })
 
       {review.replies?.map((reply) => (
         <div key={reply.id} className="mt-3">
-          <ReviewItem review={reply} isReply currentUser={currentUser} onDelete={onDelete} onLike={onLike} onReply={onReply} />
+          <ReviewItem review={reply} isReply currentUser={currentUser} onDelete={onDelete} onLike={onLike} onReply={onReply} isPending={isPending} />
         </div>
       ))}
     </div>
@@ -149,28 +150,66 @@ export default function Reviews({ contentType, contentId }) {
   const queryClient = useQueryClient()
   const { user, token } = useAuthStore()
   const [newText, setNewText] = useState('')
-  const [replyTarget, setReplyTarget] = useState(null)
-  const [replyText, setReplyText] = useState('')
+
+  const queryKey = ['reviews', contentType, String(contentId)]
 
   const { data, isLoading } = useQuery({
-    queryKey: ['reviews', contentType, contentId],
+    queryKey,
     queryFn: () => getReviews(contentType, contentId),
     select: (r) => r.data,
   })
 
   const createMutation = useMutation({
     mutationFn: (body) => createReview(body, token),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['reviews', contentType, contentId] }),
+    onMutate: async (body) => {
+      await queryClient.cancelQueries({ queryKey })
+      const prev = queryClient.getQueryData(queryKey)
+      const optimisticReview = {
+        id: 'opt-' + Date.now(),
+        content_type: contentType,
+        content_id: Number(contentId),
+        user_id: user?.id || 'guest',
+        user_name: user?.name || 'You',
+        text: body.text,
+        parent_id: body.parent_id || null,
+        created_at: Math.floor(Date.now() / 1000),
+        updated_at: Math.floor(Date.now() / 1000),
+        likes: 0,
+        replies: [],
+        _isOptimistic: true,
+      }
+      queryClient.setQueryData(queryKey, (old) => {
+        const reviews = old?.reviews || []
+        return {
+          ...old,
+          total: (old?.total || 0) + 1,
+          reviews: body.parent_id
+            ? reviews.map((r) =>
+                r.id === body.parent_id
+                  ? { ...r, replies: [...(r.replies || []), optimisticReview] }
+                  : r
+              )
+            : [optimisticReview, ...reviews],
+        }
+      })
+      return { prev }
+    },
+    onError: (err, body, context) => {
+      if (context?.prev) queryClient.setQueryData(queryKey, context.prev)
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey })
+    },
   })
 
   const deleteMutation = useMutation({
     mutationFn: (id) => deleteReview(id, token),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['reviews', contentType, contentId] }),
+    onSettled: () => queryClient.invalidateQueries({ queryKey }),
   })
 
   const likeMutation = useMutation({
     mutationFn: (id) => likeReview(id, token),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['reviews', contentType, contentId] }),
+    onSettled: () => queryClient.invalidateQueries({ queryKey }),
   })
 
   const handleSubmit = () => {
@@ -284,6 +323,7 @@ export default function Reviews({ contentType, contentId }) {
                 onDelete={(id) => deleteMutation.mutate(id)}
                 onLike={(id) => likeMutation.mutate(id)}
                 onReply={(pid, text) => handleReply(pid, text)}
+                isPending={createMutation.isPending}
               />
             </motion.div>
           ))}

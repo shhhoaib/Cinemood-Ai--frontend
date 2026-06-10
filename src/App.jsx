@@ -7,6 +7,7 @@ import MovieListing from './pages/MovieListing'
 import TVSeries from './pages/TVSeries'
 import TrendingPage from './pages/TrendingPage'
 import GenrePage from './pages/GenrePage'
+import GenresPage from './pages/GenresPage'
 import IndustryPage from './pages/IndustryPage'
 import PersonPage from './pages/PersonPage'
 import UpcomingPage from './pages/UpcomingPage'
@@ -32,6 +33,7 @@ export default function App() {
           <Route path="/movies" element={<MovieListing />} />
           <Route path="/tv" element={<TVSeries />} />
           <Route path="/trending" element={<TrendingPage />} />
+          <Route path="/genres" element={<GenresPage />} />
           <Route path="/genre/:id/:name" element={<GenrePage />} />
           <Route path="/industry/:id" element={<IndustryPage />} />
           <Route path="/upcoming" element={<UpcomingPage />} />

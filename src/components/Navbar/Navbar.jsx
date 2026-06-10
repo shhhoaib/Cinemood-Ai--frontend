@@ -47,6 +47,7 @@ export default function Navbar() {
           <div className="hidden md:flex items-center gap-1">
             <NavLink to="/" label="Home" active={location.pathname === '/'} />
             <NavLink to="/movies" label="Movies" active={location.pathname === '/movies'} />
+            <NavLink to="/genres" label="Genres" active={location.pathname === '/genres'} />
             <NavLink to="/tv" label="TV Series" active={location.pathname === '/tv'} />
             <NavLink to="/industry/bollywood" label="Industries" active={location.pathname.startsWith('/industry/')} />
             <NavLink to="/upcoming" label="Upcoming" active={location.pathname === '/upcoming'} />
@@ -137,6 +138,7 @@ export default function Navbar() {
             <div className="px-4 py-3 space-y-1">
               <MobileLink to="/" label="Home" />
               <MobileLink to="/movies" label="Movies" />
+              <MobileLink to="/genres" label="Genres" />
               <MobileLink to="/tv" label="TV Series" />
               <MobileLink to="/industry/bollywood" label="🌍 Industries" />
               <MobileLink to="/upcoming" label="Upcoming" />

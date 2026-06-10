@@ -53,3 +53,7 @@ export const createReview = (data, token) => api.post('/reviews', data, { header
 export const updateReview = (reviewId, text, token) => api.put(`/reviews/${reviewId}`, { text }, { headers: { Authorization: `Bearer ${token}` } })
 export const deleteReview = (reviewId, token) => api.delete(`/reviews/${reviewId}`, { headers: { Authorization: `Bearer ${token}` } })
 export const likeReview = (reviewId, token) => api.post(`/reviews/${reviewId}/like`, {}, { headers: { Authorization: `Bearer ${token}` } })
+
+export const submitRating = (data, token) => api.post('/ratings', data, { headers: { Authorization: `Bearer ${token}` } })
+export const getRatings = (contentType, contentId, token) =>
+  api.get(`/ratings/${contentType}/${contentId}`, token ? { headers: { Authorization: `Bearer ${token}` } } : {})

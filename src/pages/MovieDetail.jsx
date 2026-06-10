@@ -1,16 +1,22 @@
+import { useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
-import { getMovieDetail, getTvDetail, getMovieMoodProfile } from '../api/backend'
+import { getMovieDetail, getTvDetail, getMovieMoodProfile, submitRating, getRatings } from '../api/backend'
+import { useAuthStore } from '../store/useAuthStore'
 import HorizontalScroll from '../components/Hero/HorizontalScroll'
 import Loader from '../components/UI/Loader'
 import Reviews from '../components/Reviews/Reviews'
+import StarRating from '../components/Reviews/StarRating'
 
 export default function MovieDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
   const location = window.location
   const isTv = location.pathname.startsWith('/tv/')
+  const { user, token } = useAuthStore()
+  const queryClient = useQueryClient()
+  const [rated, setRated] = useState(false)
 
   const { data: movie, isLoading, error, refetch } = useQuery({
     queryKey: ['movie', id, isTv],
@@ -24,6 +30,25 @@ export default function MovieDetail() {
     select: (r) => r.data.emotional_profile,
     enabled: !isTv,
     staleTime: 1000 * 60 * 60,
+  })
+
+  const ratingMutation = useMutation({
+    mutationFn: (rating) => {
+      const body = { rating }
+      if (isTv) body.tv_id = Number(id)
+      else body.movie_id = Number(id)
+      return submitRating(body, token)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['movie', id, isTv] })
+    },
+  })
+
+  const { data: userRatingData } = useQuery({
+    queryKey: ['user-rating', id, isTv, token],
+    queryFn: () => getRatings(isTv ? 'tv' : 'movie', id, token),
+    select: (r) => r.data,
+    enabled: !!user,
   })
 
   if (isLoading) return <div className="flex justify-center py-20"><Loader text={`Loading ${isTv ? 'series' : 'movie'}...`} /></div>
@@ -130,6 +155,14 @@ export default function MovieDetail() {
                   <span className="text-white font-semibold text-sm">{movie.metacritic_score}</span>
                 </div>
               )}
+              {/* User Ratings */}
+              {movie.user_rating?.count > 0 && (
+                <div className="flex items-center gap-1.5 bg-cinema-dark/60 rounded-lg px-2.5 py-1.5 border border-white/5">
+                  <span className="text-[10px] font-bold text-cinema-gold">Users</span>
+                  <span className="text-white font-semibold text-sm">{movie.user_rating.average?.toFixed(1)}</span>
+                  <span className="text-gray-500 text-[10px]">({movie.user_rating.count})</span>
+                </div>
+              )}
               {/* Certification */}
               {movie.certification && (
                 <div className="flex items-center bg-white/5 rounded-lg px-2.5 py-1.5 border border-white/10">
@@ -151,6 +184,64 @@ export default function MovieDetail() {
               ))}
             </div>
             <p className="text-gray-300 mt-4 leading-relaxed">{movie.overview}</p>
+
+            {/* User Rating */}
+            <div className="mt-5 bg-white/5 rounded-xl p-4 border border-white/5">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div>
+                  <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Rate this {isTv ? 'show' : 'movie'}</p>
+                  {user ? (
+                    <StarRating
+                      value={ratingMutation.isPending ? 0 : (userRatingData?.user_rating || 0)}
+                      onChange={(v) => ratingMutation.mutate(v)}
+                      size="lg"
+                      showValue={false}
+                    />
+                  ) : (
+                    <Link to="/login" className="text-xs text-gray-500 hover:text-cinema-red transition-colors">
+                      Log in to rate
+                    </Link>
+                  )}
+                </div>
+                {movie.user_rating?.count > 0 && (
+                  <div className="text-right">
+                    <p className="text-white text-xl font-bold">{movie.user_rating.average?.toFixed(1)}</p>
+                    <p className="text-gray-500 text-xs">{movie.user_rating.count} user rating{movie.user_rating.count !== 1 ? 's' : ''}</p>
+                  </div>
+                )}
+              </div>
+              {ratingMutation.isPending && (
+                <div className="flex items-center gap-2 mt-2">
+                  <span className="w-3 h-3 rounded-full border-2 border-cinema-red border-t-transparent animate-spin" />
+                  <span className="text-gray-400 text-xs">Submitting your rating...</span>
+                </div>
+              )}
+
+              {/* Rating Distribution */}
+              {movie.user_rating?.count > 0 && movie.user_rating?.distribution && (
+                <div className="mt-4 pt-3 border-t border-white/5">
+                  <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-2">Rating breakdown</p>
+                  <div className="space-y-1">
+                    {[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map((star) => {
+                      const count = movie.user_rating.distribution[star] || 0
+                      const pct = (count / movie.user_rating.count) * 100
+                      return (
+                        <div key={star} className="flex items-center gap-2 text-xs">
+                          <span className="text-gray-400 w-4 text-right">{star}</span>
+                          <div className="flex-1 h-2 bg-white/5 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-cinema-gold rounded-full transition-all"
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                          <span className="text-gray-500 w-8 text-right">{count}</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* Movie Info Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-5">
